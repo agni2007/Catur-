@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Catur Lengkap</title>
+    <style>
+        /* CSS untuk halaman registrasi dan menu */
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .auth-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        
+        .auth-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .auth-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .auth-form button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .auth-form button:hover {
+            background: #45a049;
+        }
+        
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .menu-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        
+        .menu-box h2 {
+            margin-bottom: 20px;
+        }
+        
+        .menu-box button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .menu-box button:hover {
+            background: #45a049;
+        }
+        
+        /* CSS untuk game catur (sama seperti sebelumnya) */
+        .game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            font-family: sans-serif;
+        }
+        
+        #chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 2px solid #333;
+            margin-top: 20px;
+        }
+        
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            user-select: none;
+            position: relative;
+        }
+        
+        .white { background-color: #f0d9b5; }
+        .black { background-color: #b58863; }
+        
+        .piece {
+            cursor: grab;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+        
+        .piece:active {
+            cursor: grabbing;
+            transform: scale(1.2);
+        }
+        
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.5);
+        }
+        
+        .last-move {
+            background-color: rgba(155, 199, 0, 0.41);
+        }
+        
+        .check {
+            background-color: rgba(255, 0, 0, 0.5);
+        }
+        
+        .promotion-dialog {
+            position: absolute;
+            background: white;
+            border: 1px solid #333;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .promotion-option {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            text-align: center;
+        }
+        
+        .promotion-option:hover {
+            background: #eee;
+        }
+        
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Halaman Registrasi -->
+    <div id="register-container" class="auth-container">
+        <div class="auth-form">
+            <h2>Registrasi</h2>
+            <input type="text" id="reg-username" placeholder="Username">
+            <input type="email" id="reg-email" placeholder="Email">
+            <input type="password" id="reg-password" placeholder="Password">
+            <div id="reg-error" class="error-message"></div>
+            <button id="register-btn">Daftar</button>
+            <p>Sudah punya akun? <a href="#" id="show-login">Login disini</a></p>
+        </div>
+    </div>
+    
+    <!-- Halaman Login -->
+    <div id="login-container" class="auth-container" style="display: none;">
+        <div class="auth-form">
+            <h2>Login</h2>
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <div id="login-error" class="error-message"></div>
+            <button id="login-btn">Masuk</button>
+            <p>Belum punya akun? <a href="#" id="show-register">Daftar disini</a></p>
+        </div>
+    </div>
+    
+    <!-- Halaman Menu Utama -->
+    <div id="menu-container" class="menu-container" style="display: none;">
+        <div class="menu-box">
+            <h2>Menu Utama</h2>
+            <p id="welcome-message">Selamat datang, <span id="display-username"></span>!</p>
+            <button id="play-btn">Main Game</button>
+            <button id="logout-btn">Keluar</button>
+        </div>
+    </div>
+    
+    <!-- Halaman Game -->
+    <div id="game-container" class="game-container" style="display: none;">
+        <h2>Giliran: <span id="turn">Putih</span></h2>
+        <div id="chessboard"></div>
+        <p id="message" style="color: red;"></p>
+        <p>Status: <span id="status">Permainan berjalan</span></p>
+        <button id="back-to-menu" style="margin-top: 20px; padding: 10px 20px;">Kembali ke Menu</button>
+    </div>
+
+    <script>
+        // Variabel untuk menyimpan data user
+        let currentUser = null;
+        
+        // DOM Elements untuk autentikasi
+        const registerContainer = document.getElementById('register-container');
+        const loginContainer = document.getElementById('login-container');
+        const menuContainer = document.getElementById('menu-container');
+        const gameContainer = document.getElementById('game-container');
+        
+        const registerBtn = document.getElementById('register-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const showLogin = document.getElementById('show-login');
+        const showRegister = document.getElementById('show-register');
+        const playBtn = document.getElementById('play-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const backToMenuBtn = document.getElementById('back-to-menu');
+        const displayUsername = document.getElementById('display-username');
+        
+        // Event listeners untuk navigasi
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerContainer.style.display = 'none';
+            loginContainer.style.display = 'flex';
+        });
+        
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginContainer.style.display = 'none';
+            registerContainer.style.display = 'flex';
+        });
+        
+        // Fungsi registrasi sederhana
+        registerBtn.addEventListener('click', () => {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            if (!username || !email || !password) {
+                document.getElementById('reg-error').textContent = 'Semua field harus diisi!';
+                return;
+            }
+            
+            // Simpan user ke localStorage (simulasi database)
+            const users = JSON.parse(localStorage.getItem('chessUsers')) || [];
+            
+            // Cek apakah username sudah ada
+            if (users.some(user => user.username === username)) {
+                document.getElementById('reg-error').textContent = 'Username sudah terdaftar!';
+                return;
+            }
+            
+            // Tambahkan user baru
+            users.push({ username, email, password });
+            localStorage.setItem('chessUsers', JSON.stringify(users));
+            
+            // Login otomatis setelah registrasi
+            currentUser = { username, email };
+            localStorage.setItem('currentChessUser', JSON.stringify(currentUser));
+            
+            // Pindah ke menu
+            showMenu();
+        });
+        
+        // Fungsi login sederhana
+        loginBtn.addEventListener('click', () => {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) {
+                document.getElementById('login-error').textContent = 'Semua field harus diisi!';
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('chessUsers')) || [];
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (!user) {
+                document.getElementById('login-error').textContent = 'Username atau password salah!';
+                return;
+            }
+            
+            currentUser = { username: user.username, email: user.email };
+            localStorage.setItem('currentChessUser', JSON.stringify(currentUser));
+            
+            showMenu();
+        });
+        
+        // Fungsi logout
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            localStorage.removeItem('currentChessUser');
+            showLoginPage();
+        });
+        
+        // Tombol main game
+        playBtn.addEventListener('click', () => {
+            menuContainer.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            initGame();
+        });
+        
+        // Tombol kembali ke menu
+        backToMenuBtn.addEventListener('click', () => {
+            gameContainer.style.display = 'none';
+            menuContainer.style.display = 'flex';
+        });
+        
+        // Fungsi untuk menampilkan halaman menu
+        function showMenu() {
+            registerContainer.style.display = 'none';
+            loginContainer.style.display = 'none';
+            menuContainer.style.display = 'flex';
+            
+            if (currentUser) {
+                displayUsername.textContent = currentUser.username;
+            }
+        }
+        
+        // Fungsi untuk menampilkan halaman login
+        function showLoginPage() {
+            registerContainer.style.display = 'none';
+            loginContainer.style.display = 'flex';
+            menuContainer.style.display = 'none';
+            gameContainer.style.display = 'none';
+            
+            // Reset form
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').textContent = '';
+        }
+        
+        // Cek apakah user sudah login saat pertama kali load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('currentChessUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMenu();
+            } else {
+                showLoginPage();
+            }
+        });
+        
+        // =============================================
+        // Kode game catur (sama seperti sebelumnya)
+        // =============================================
+        
+        function initGame() {
+            const boardElement = document.getElementById("chessboard");
+            const turnDisplay = document.getElementById("turn");
+            const messageElement = document.getElementById("message");
+            const statusElement = document.getElementById("status");
+
+            let turn = "white";
+            let boardState = [
+                ["♜","♞","♝","♛","♚","♝","♞","♜"],
+                ["♟","♟","♟","♟","♟","♟","♟","♟"],
+                ["","","","","","","",""],
+                ["","","","","","","",""],
+                ["","","","","","","",""],
+                ["","","","","","","",""],
+                ["♙","♙","♙","♙","♙","♙","♙","♙"],
+                ["♖","♘","♗","♕","♔","♗","♘","♖"]
+            ];
+            let lastMove = null;
+            let checkStatus = { white: false, black: false };
+            let enPassantTarget = null;
+            let castlingRights = {
+                white: { kingside: true, queenside: true },
+                black: { kingside: true, queenside: true }
+            };
+
+            const whitePieces = "♙♖♘♗♕♔";
+            const blackPieces = "♟♜♞♝♛♚";
+
+            let selectedSquare = null;
+            let validMoves = [];
+
+            function isWhitePiece(piece) {
+                return whitePieces.includes(piece);
+            }
+
+            function isBlackPiece(piece) {
+                return blackPieces.includes(piece);
+            }
+
+            function getPieceColor(piece) {
+                if (isWhitePiece(piece)) return "white";
+                if (isBlackPiece(piece)) return "black";
+                return null;
+            }
+
+            function createBoard() {
+                boardElement.innerHTML = "";
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const square = document.createElement("div");
+                        square.classList.add("square");
+                        square.classList.add((row + col) % 2 === 0 ? "white" : "black");
+                        square.dataset.row = row;
+                        square.dataset.col = col;
+
+                        if (lastMove && 
+                            ((lastMove.from.row === row && lastMove.from.col === col) ||
+                             (lastMove.to.row === row && lastMove.to.col === col))) {
+                            square.classList.add("last-move");
+                        }
+
+                        const piece = boardState[row][col];
+                        if ((checkStatus.white && piece === "♔") || 
+                            (checkStatus.black && piece === "♚")) {
+                            square.classList.add("check");
+                        }
+
+                        if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
+                            square.classList.add("highlight");
+                        } else if (validMoves.some(move => move.row === row && move.col === col)) {
+                            square.classList.add("highlight");
+                        }
+
+                        if (piece) {
+                            const pieceElem = document.createElement("div");
+                            pieceElem.textContent = piece;
+                            pieceElem.classList.add("piece");
+                            pieceElem.setAttribute("draggable", "true");
+                            square.appendChild(pieceElem);
+                        }
+
+                        boardElement.appendChild(square);
+                    }
+                }
+            }
+
+            function getValidMoves(row, col) {
+                const piece = boardState[row][col];
+                const moves = [];
+                const color = getPieceColor(piece);
+
+                if (!piece || color !== turn) return moves;
+
+                function isAlly(r, c) {
+                    const target = boardState[r][c];
+                    if (!target) return false;
+                    return (color === "white" && isWhitePiece(target)) || 
+                           (color === "black" && isBlackPiece(target));
+                }
+
+                function isEnemy(r, c) {
+                    const target = boardState[r][c];
+                    if (!target) return false;
+                    return (color === "white" && isBlackPiece(target)) || 
+                           (color === "black" && isWhitePiece(target));
+                }
+
+                if (piece === "♙" || piece === "♟") {
+                    const direction = piece === "♙" ? -1 : 1;
+                    const startRow = piece === "♙" ? 6 : 1;
+                    
+                    if (row + direction >= 0 && row + direction < 8 && !boardState[row + direction][col]) {
+                        moves.push({row: row + direction, col});
+                        
+                        if (row === startRow && !boardState[row + 2 * direction][col]) {
+                            moves.push({row: row + 2 * direction, col, isDoublePawnMove: true});
+                        }
+                    }
+                    
+                    for (const dc of [-1, 1]) {
+                        const newCol = col + dc;
+                        if (newCol >= 0 && newCol < 8) {
+                            if (row + direction >= 0 && row + direction < 8 && isEnemy(row + direction, newCol)) {
+                                moves.push({row: row + direction, col: newCol});
+                            }
+                            
+                            if (enPassantTarget && enPassantTarget.row === row + direction && enPassantTarget.col === newCol) {
+                                moves.push({row: row + direction, col: newCol, isEnPassant: true});
+                            }
+                        }
+                    }
+                }
+                
+                else if (piece === "♖" || piece === "♜") {
+                    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAlly(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemy(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♘" || piece === "♞") {
+                    const movesRelative = [
+                        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                        [1, -2], [1, 2], [2, -1], [2, 1]
+                    ];
+                    for (const [dr, dc] of movesRelative) {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !isAlly(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                    }
+                }
+                
+                else if (piece === "♗" || piece === "♝") {
+                    const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAlly(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemy(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♕" || piece === "♛") {
+                    const directions = [
+                        [-1, 0], [1, 0], [0, -1], [0, 1],
+                        [-1, -1], [-1, 1], [1, -1], [1, 1]
+                    ];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAlly(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemy(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♔" || piece === "♚") {
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !isAlly(newRow, newCol)) {
+                                moves.push({row: newRow, col: newCol});
+                            }
+                        }
+                    }
+                    
+                    const kingStartRow = (color === "white") ? 7 : 0;
+                    if (row === kingStartRow && col === 4 && !checkStatus[color]) {
+                        if (castlingRights[color].kingside &&
+                            !boardState[row][5] && !boardState[row][6] &&
+                            !isSquareUnderAttack(row, 5, color === "white" ? "black" : "white") &&
+                            !isSquareUnderAttack(row, 6, color === "white" ? "black" : "white") &&
+                            boardState[row][7] === (color === "white" ? "♖" : "♜")) {
+                            moves.push({row, col: 6, isCastle: true, castleRookFrom: {row, col: 7}, castleRookTo: {row, col: 5}});
+                        }
+                        if (castlingRights[color].queenside &&
+                            !boardState[row][3] && !boardState[row][2] && !boardState[row][1] &&
+                            !isSquareUnderAttack(row, 3, color === "white" ? "black" : "white") &&
+                            !isSquareUnderAttack(row, 2, color === "white" ? "black" : "white") &&
+                            boardState[row][0] === (color === "white" ? "♖" : "♜")) {
+                            moves.push({row, col: 2, isCastle: true, castleRookFrom: {row, col: 0}, castleRookTo: {row, col: 3}});
+                        }
+                    }
+                }
+
+                return moves.filter(move => {
+                    const originalBoard = JSON.parse(JSON.stringify(boardState));
+                    const originalEnPassant = enPassantTarget;
+                    const originalCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+
+                    boardState[move.row][move.col] = boardState[row][col];
+                    boardState[row][col] = "";
+
+                    if (move.isCastle) {
+                        boardState[move.castleRookTo.row][move.castleRookTo.col] = originalBoard[move.castleRookFrom.row][move.castleRookFrom.col];
+                        boardState[move.castleRookFrom.row][move.castleRookFrom.col] = "";
+                    }
+                    if (move.isEnPassant) {
+                        boardState[row][move.col] = "";
+                    }
+                    
+                    const kingPos = findKing(color);
+                    const isInCheck = isSquareUnderAttack(kingPos.row, kingPos.col, color === "white" ? "black" : "white", boardState);
+                    
+                    boardState = originalBoard;
+                    enPassantTarget = originalEnPassant;
+                    castlingRights = originalCastlingRights;
+                    
+                    return !isInCheck;
+                });
+            }
+
+            function findKing(color) {
+                const king = color === "white" ? "♔" : "♚";
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (boardState[row][col] === king) {
+                            return {row, col};
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function isSquareUnderAttack(row, col, byColor, currentBoard = boardState) {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = currentBoard[r][c];
+                        if (!piece) continue;
+                        if ((byColor === "white" && isWhitePiece(piece)) || 
+                            (byColor === "black" && isBlackPiece(piece))) {
+                            
+                            const originalBoard = JSON.parse(JSON.stringify(boardState));
+                            boardState = JSON.parse(JSON.stringify(currentBoard));
+                            
+                            const moves = getThreateningMoves(r, c, boardState);
+                            
+                            boardState = originalBoard;
+
+                            if (moves.some(m => m.row === row && m.col === col)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function getThreateningMoves(row, col, currentBoard) {
+                const piece = currentBoard[row][col];
+                const moves = [];
+                const color = getPieceColor(piece);
+
+                function isAllyThreat(r, c) {
+                    const target = currentBoard[r][c];
+                    if (!target) return false;
+                    return (color === "white" && isWhitePiece(target)) || 
+                           (color === "black" && isBlackPiece(target));
+                }
+
+                function isEnemyThreat(r, c) {
+                    const target = currentBoard[r][c];
+                    if (!target) return false;
+                    return (color === "white" && isBlackPiece(target)) || 
+                           (color === "black" && isWhitePiece(target));
+                }
+
+                if (piece === "♙") {
+                    const direction = -1;
+                    for (const dc of [-1, 1]) {
+                        const newRow = row + direction;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                    }
+                } else if (piece === "♟") {
+                    const direction = 1;
+                    for (const dc of [-1, 1]) {
+                        const newRow = row + direction;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                    }
+                }
+                
+                else if (piece === "♖" || piece === "♜") {
+                    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAllyThreat(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemyThreat(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♘" || piece === "♞") {
+                    const movesRelative = [
+                        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                        [1, -2], [1, 2], [2, -1], [2, 1]
+                    ];
+                    for (const [dr, dc] of movesRelative) {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !isAllyThreat(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        }
+                    }
+                }
+                
+                else if (piece === "♗" || piece === "♝") {
+                    const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAllyThreat(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemyThreat(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♕" || piece === "♛") {
+                    const directions = [
+                        [-1, 0], [1, 0], [0, -1], [0, 1],
+                        [-1, -1], [-1, 1], [1, -1], [1, 1]
+                    ];
+                    for (const [dr, dc] of directions) {
+                        for (let i = 1; i < 8; i++) {
+                            const newRow = row + dr * i;
+                            const newCol = col + dc * i;
+                            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+                            if (isAllyThreat(newRow, newCol)) break;
+                            moves.push({row: newRow, col: newCol});
+                            if (isEnemyThreat(newRow, newCol)) break;
+                        }
+                    }
+                }
+                
+                else if (piece === "♔" || piece === "♚") {
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                                moves.push({row: newRow, col: newCol});
+                            }
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            function makeMoveOnBoard(fromRow, fromCol, toRow, toCol, moveDetails) {
+                const piece = boardState[fromRow][fromCol];
+                const moveInfo = {
+                    piece,
+                    from: {row: fromRow, col: fromCol},
+                    to: {row: toRow, col: toCol},
+                    captured: boardState[toRow][toCol],
+                    isPromotion: moveDetails.isPromotion || false,
+                    isCastle: moveDetails.isCastle || false,
+                    isEnPassant: moveDetails.isEnPassant || false
+                };
+
+                enPassantTarget = null;
+
+                if (moveDetails.isEnPassant) {
+                    const capturedPawnRow = fromRow;
+                    const capturedPawnCol = toCol;
+                    moveInfo.captured = boardState[capturedPawnRow][capturedPawnCol];
+                    boardState[capturedPawnRow][capturedPawnCol] = "";
+                }
+
+                boardState[toRow][toCol] = piece;
+                boardState[fromRow][fromCol] = "";
+
+                if (moveDetails.isCastle) {
+                    if (toCol === 6) {
+                        boardState[toRow][5] = boardState[toRow][7];
+                        boardState[toRow][7] = "";
+                    } else if (toCol === 2) {
+                        boardState[toRow][3] = boardState[toRow][0];
+                        boardState[toRow][0] = "";
+                    }
+                }
+
+                if ((piece === "♙" && toRow === 0) || (piece === "♟" && toRow === 7)) {
+                    return showPromotionDialog(fromRow, fromCol, toRow, toCol, piece);
+                }
+
+                // Update castling rights
+                if (piece === "♔") castlingRights.white = { kingside: false, queenside: false };
+                if (piece === "♚") castlingRights.black = { kingside: false, queenside: false };
+                if (piece === "♖") {
+                    if (fromRow === 7 && fromCol === 7) castlingRights.white.kingside = false;
+                    if (fromRow === 7 && fromCol === 0) castlingRights.white.queenside = false;
+                }
+                if (piece === "♜") {
+                    if (fromRow === 0 && fromCol === 7) castlingRights.black.kingside = false;
+                    if (fromRow === 0 && fromCol === 0) castlingRights.black.queenside = false;
+                }
+
+                if ((piece === "♙" || piece === "♟") && Math.abs(fromRow - toRow) === 2) {
+                    enPassantTarget = {row: fromRow + (toRow - fromRow)/2, col: fromCol};
+                }
+                
+                lastMove = moveInfo;
+                turn = turn === "white" ? "black" : "white";
+                turnDisplay.textContent = turn === "white" ? "Putih" : "Hitam";
+                
+                // Clear selection after move
+                selectedSquare = null;
+                validMoves = [];
+                
+                updateGameStatus();
+                createBoard();
+            }
+
+            function showPromotionDialog(fromRow, fromCol, toRow, toCol, pawn) {
+                const isWhite = pawn === "♙";
+                const promotionPieces = isWhite ? ["♕", "♖", "♗", "♘"] : ["♛", "♜", "♝", "♞"];
+                
+                const dialog = document.createElement("div");
+                dialog.className = "promotion-dialog";
+                
+                promotionPieces.forEach(piece => {
+                    const option = document.createElement("div");
+                    option.className = "promotion-option";
+                    option.textContent = piece;
+                    option.onclick = () => {
+                        boardState[toRow][toCol] = piece;
+                        boardState[fromRow][fromCol] = "";
+                        
+                        lastMove = {
+                            piece: pawn,
+                            from: {row: fromRow, col: fromCol},
+                            to: {row: toRow, col: toCol},
+                            captured: null,
+                            isPromotion: true,
+                            promotedTo: piece
+                        };
+                        
+                        if (piece === "♖") {
+                            if (toCol === 0 && toRow === 0) castlingRights.white.queenside = false;
+                            if (toCol === 7 && toRow === 0) castlingRights.white.kingside = false;
+                        }
+                        if (piece === "♜") {
+                            if (toCol === 0 && toRow === 7) castlingRights.black.queenside = false;
+                            if (toCol === 7 && toRow === 7) castlingRights.black.kingside = false;
+                        }
+
+                        turn = turn === "white" ? "black" : "white";
+                        turnDisplay.textContent = turn === "white" ? "Putih" : "Hitam";
+                        
+                        // Clear selection after promotion
+                        selectedSquare = null;
+                        validMoves = [];
+                        
+                        updateGameStatus();
+                        createBoard();
+                        dialog.remove();
+                    };
+                    dialog.appendChild(option);
+                });
+                
+                document.body.appendChild(dialog); 
+            }
+
+            function updateGameStatus() {
+                const whiteKingPos = findKing("white");
+                const blackKingPos = findKing("black");
+
+                checkStatus.white = isSquareUnderAttack(whiteKingPos.row, whiteKingPos.col, "black");
+                checkStatus.black = isSquareUnderAttack(blackKingPos.row, blackKingPos.col, "white");
+                
+                const currentPlayerColor = turn;
+                let hasLegalMoves = false;
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const piece = boardState[row][col];
+                        if (piece && getPieceColor(piece) === currentPlayerColor) {
+                            const moves = getValidMoves(row, col);
+                            if (moves.length > 0) {
+                                hasLegalMoves = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasLegalMoves) break;
+                }
+                
+                messageElement.textContent = "";
+                if (!hasLegalMoves) {
+                    if (checkStatus[currentPlayerColor]) {
+                        statusElement.textContent = `Skakmat! ${currentPlayerColor === "white" ? "Hitam" : "Putih"} menang!`;
+                        messageElement.textContent = "Permainan berakhir: Skakmat!";
+                    } else {
+                        statusElement.textContent = "Stalemate! Permainan seri.";
+                        messageElement.textContent = "Permainan berakhir: Remis!";
+                    }
+                } else if (checkStatus[currentPlayerColor]) {
+                    statusElement.textContent = `${currentPlayerColor === "white" ? "Putih" : "Hitam"} dalam skak!`;
+                    messageElement.textContent = "Perhatian: Raja Anda dalam skak!";
+                } else {
+                    statusElement.textContent = "Permainan berjalan";
+                }
+            }
+
+            boardElement.addEventListener("click", function(e) {
+                let square = e.target;
+                if (!square.classList.contains("square")) {
+                    square = square.closest(".square");
+                    if (!square) return;
+                }
+                
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                const piece = boardState[row][col];
+                
+                messageElement.textContent = "";
+
+                if (selectedSquare) {
+                    const isValidMove = validMoves.find(move => move.row === row && move.col === col);
+                    if (isValidMove) {
+                        makeMoveOnBoard(selectedSquare.row, selectedSquare.col, row, col, isValidMove);
+                    } else {
+                        if (piece && getPieceColor(piece) === turn) {
+                            selectedSquare = {row, col};
+                            validMoves = getValidMoves(row, col);
+                        } else {
+                            selectedSquare = null;
+                            validMoves = [];
+                        }
+                    }
+                } else {
+                    if (piece && getPieceColor(piece) === turn) {
+                        selectedSquare = {row, col};
+                        validMoves = getValidMoves(row, col);
+                    } else if (piece && getPieceColor(piece) !== turn) {
+                        messageElement.textContent = "Ini bukan giliran Anda!";
+                    } else {
+                        messageElement.textContent = "Pilih bidak Anda untuk bergerak.";
+                    }
+                }
+                createBoard();
+            });
+
+            createBoard();
+            updateGameStatus();
+        }
+    </script>
+</body>
+</html>
